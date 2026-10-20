@@ -1,0 +1,15 @@
+{
+  "name": "customer-inquiry-management-system",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "test": "npm test --prefix server && npm test --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
