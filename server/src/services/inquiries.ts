@@ -1,7 +1,8 @@
 import { pool } from '../db.js'
 import { AppError } from '../errors.js'
 import type { User } from '../types.js'
-import type { CreateInquiryInput, ListQuery } from '../validation/inquiries.js'
+import { canTransition } from '../status.js'
+import type { ChangeStatusInput, CreateInquiryInput, ListQuery, UpdateInquiryInput } from '../validation/inquiries.js'
 
 export interface Inquiry {
   id: number
@@ -104,4 +105,56 @@ export async function createInquiry(user: User, input: CreateInquiryInput): Prom
     if (code === '23503') throw new AppError('VALIDATION_ERROR', 'Assigned staff member does not exist', { fields: { assignedTo: 'Unknown staff member' } })
     throw err
   }
+}
+
+export async function changeStatus(user: User, id: number, input: ChangeStatusInput): Promise<Inquiry> {
+  await getInquiry(user, id) // 404 / 403 checks
+
+  if (!canTransition(input.expectedStatus, input.status)) {
+    throw new AppError('CONFLICT', `Cannot move an inquiry from ${input.expectedStatus} to ${input.status}`, {
+      reason: 'INVALID_TRANSITION',
+    })
+  }
+
+  // Only updates if the status is still what the client saw; 0 rows means another tab changed it.
+  const { rowCount } = await pool.query(
+    `UPDATE inquiries SET status = $1, updated_by = $2, updated_at = now()
+     WHERE id = $3 AND status = $4`,
+    [input.status, user.id, id, input.expectedStatus],
+  )
+  if (rowCount === 0) {
+    const current = await getInquiry(user, id)
+    throw new AppError('CONFLICT', `This inquiry was changed by someone else and is now ${current.status}`, {
+      reason: 'STALE',
+      currentStatus: current.status,
+    })
+  }
+
+  return getInquiry(user, id)
+}
+
+export async function updateInquiry(user: User, id: number, input: UpdateInquiryInput): Promise<Inquiry> {
+  await getInquiry(user, id)
+
+  if (input.assignedTo !== undefined && user.role !== 'manager') {
+    throw new AppError('FORBIDDEN', 'Only managers can reassign inquiries')
+  }
+
+  try {
+    await pool.query(
+      `UPDATE inquiries
+       SET priority = COALESCE($1, priority),
+           assigned_to = COALESCE($2, assigned_to),
+           updated_by = $3, updated_at = now()
+       WHERE id = $4`,
+      [input.priority === undefined ? null : input.priority, input.assignedTo ?? null, user.id, id],
+    )
+  } catch (err) {
+    if ((err as { code?: string }).code === '23503') {
+      throw new AppError('VALIDATION_ERROR', 'Assigned staff member does not exist', { fields: { assignedTo: 'Unknown staff member' } })
+    }
+    throw err
+  }
+
+  return getInquiry(user, id)
 }

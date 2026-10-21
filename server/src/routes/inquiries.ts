@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import { createInquiry, getInquiry, listInquiries } from '../services/inquiries.js'
-import { createInquirySchema, idParamSchema, listQuerySchema } from '../validation/inquiries.js'
+import { changeStatus, createInquiry, getInquiry, listInquiries, updateInquiry } from '../services/inquiries.js'
+import { changeStatusSchema, createInquirySchema, idParamSchema, listQuerySchema, updateInquirySchema } from '../validation/inquiries.js'
 
 export const inquiriesRouter = Router()
 
@@ -30,6 +30,26 @@ inquiriesRouter.get('/:id', async (req, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params)
     res.json({ inquiry: await getInquiry(req.user!, id) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+inquiriesRouter.patch('/:id/status', async (req, res, next) => {
+  try {
+    const { id } = idParamSchema.parse(req.params)
+    const input = changeStatusSchema.parse(req.body)
+    res.json({ inquiry: await changeStatus(req.user!, id, input) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+inquiriesRouter.patch('/:id', async (req, res, next) => {
+  try {
+    const { id } = idParamSchema.parse(req.params)
+    const input = updateInquirySchema.parse(req.body)
+    res.json({ inquiry: await updateInquiry(req.user!, id, input) })
   } catch (err) {
     next(err)
   }

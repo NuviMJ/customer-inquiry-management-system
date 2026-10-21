@@ -31,3 +31,21 @@ export const listQuerySchema = z.object({
 
 export type CreateInquiryInput = z.infer<typeof createInquirySchema>
 export type ListQuery = z.infer<typeof listQuerySchema>
+
+const statusField = z.enum(STATUSES, { message: 'Status must be New, In Progress or Resolved' })
+
+// expectedStatus is the status the client last saw; it powers the stale-data check.
+export const changeStatusSchema = z.object({
+  status: statusField,
+  expectedStatus: statusField,
+})
+
+export const updateInquirySchema = z
+  .object({
+    priority: z.enum(PRIORITIES, { message: 'Priority must be High or Low' }).nullable().optional(),
+    assignedTo: z.number().int().positive().optional(),
+  })
+  .refine((v) => v.priority !== undefined || v.assignedTo !== undefined, 'Nothing to update')
+
+export type ChangeStatusInput = z.infer<typeof changeStatusSchema>
+export type UpdateInquiryInput = z.infer<typeof updateInquirySchema>
