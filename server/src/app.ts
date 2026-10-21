@@ -1,6 +1,8 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import { authRouter } from './routes/auth.js'
+import { inquiriesRouter } from './routes/inquiries.js'
+import { usersRouter } from './routes/users.js'
 import { errorHandler, notFoundHandler } from './errors.js'
 import './types.js'
 
@@ -15,6 +17,8 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRouter)
+app.use('/api/inquiries', inquiriesRouter)
+app.use('/api/users', usersRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)

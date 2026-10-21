@@ -36,7 +36,7 @@ export const notFoundHandler: RequestHandler = (_req, res) => {
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ZodError) {
     const fields: Record<string, string> = {}
-    for (const issue of err.issues) fields[issue.path.join('.')] = issue.message
+    for (const issue of err.issues) fields[issue.path.join('.') || 'form'] = issue.message
     res.status(400).json({
       error: { code: 'VALIDATION_ERROR', message: 'Please check the highlighted fields', details: { fields } },
     })
