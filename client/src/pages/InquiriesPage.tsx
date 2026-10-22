@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { PriorityBadge, StatusBadge } from '../components/Badges'
-import { formatDate } from '../format'
+import { statusIcon } from '../components/Badges'
+import { InquiryTable } from '../components/InquiryTable'
+import { PageHeader } from '../components/PageHeader'
 import { STATUSES, type Inquiry } from '../types'
+import { isOpen, isStale, sortByUrgency } from '../urgency'
+
+// Dashboard cards link here with ?focus=...
+const focusLabel: Record<string, string> = {
+  open: 'Open inquiries',
+  high: 'High priority open',
+  stale: 'No update in 24h',
+  mine: 'My open work',
+}
 
 export function InquiriesPage() {
   const { user } = useAuth()
-  const [status, setStatus] = useState('')
+  const [params, setParams] = useSearchParams()
+  const status = params.get('status') ?? ''
+  const focus = params.get('focus') ?? ''
   const [q, setQ] = useState('')
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [loading, setLoading] = useState(true)
@@ -18,7 +30,7 @@ export function InquiriesPage() {
     setLoading(true)
     setError(null)
     try {
-      const data = await api.listInquiries({ status, q })
+      const data = await api.listInquiries({ q })
       setInquiries(data.inquiries)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not load inquiries')
@@ -27,100 +39,95 @@ export function InquiriesPage() {
     }
   }
 
-  // Reload when filters change; the short delay stops a request per keystroke
+  // Search goes to the server; the short delay stops a request per keystroke
   useEffect(() => {
     const timer = setTimeout(load, 300)
     return () => clearTimeout(timer)
-  }, [status, q])
+  }, [q])
 
-  const filtering = status !== '' || q.trim() !== ''
+  function setStatus(next: string) {
+    const nextParams = new URLSearchParams(params)
+    if (next) nextParams.set('status', next)
+    else nextParams.delete('status')
+    setParams(nextParams)
+  }
+
+  // Tabs and focus are applied in the browser so tab counts stay visible
+  let visible = inquiries
+  if (focus === 'open') visible = visible.filter(isOpen)
+  if (focus === 'high') visible = visible.filter((i) => isOpen(i) && i.priority === 'High')
+  if (focus === 'stale') visible = visible.filter(isStale)
+  if (focus === 'mine') visible = visible.filter((i) => isOpen(i) && i.assignedTo.id === user?.id)
+  if (status) visible = visible.filter((i) => i.status === status)
+  visible = sortByUrgency(visible)
+
+  const filtering = status !== '' || focus !== '' || q.trim() !== ''
 
   return (
     <>
-      <div className="page-head">
+      <PageHeader title="Inquiries" action={<Link to="/inquiries/new" className="btn btn-primary">+ New inquiry</Link>} />
+      <main className="page">
         <div>
           <h1>Inquiries</h1>
-          <p className="muted">
-            {user?.role === 'manager' ? 'All inquiries' : 'Inquiries assigned to you'}
-          </p>
+          <div className="sub">
+            {user?.role === 'manager' ? 'All inquiries' : 'Inquiries assigned to you'}, sorted by what needs attention first
+          </div>
         </div>
-        <Link to="/inquiries/new" className="btn btn-primary">New inquiry</Link>
-      </div>
 
-      <div className="toolbar">
-        <label>
-          Search
-          <input
-            type="search"
-            placeholder="Customer, subject or contact"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </label>
-        <label className="short">
-          Status
-          <select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All statuses</option>
+        {focus && focusLabel[focus] && (
+          <div>
+            <span className="focus-chip">
+              Showing: {focusLabel[focus]} <Link to="/inquiries" aria-label="Clear focus">✕</Link>
+            </span>
+          </div>
+        )}
+
+        <div className="toolbar">
+          <div className="tabs" role="tablist">
+            <button className={`tab ${status === '' ? 'active' : ''}`} onClick={() => setStatus('')}>
+              All <span className="count">{inquiries.length}</span>
+            </button>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <button key={s} className={`tab ${status === s ? 'active' : ''}`} onClick={() => setStatus(s)}>
+                {statusIcon[s]} {s} <span className="count">{inquiries.filter((i) => i.status === s).length}</span>
+              </button>
             ))}
-          </select>
-        </label>
-      </div>
-
-      {loading && <p className="muted center">Loading inquiries…</p>}
-
-      {!loading && error && (
-        <div className="alert alert-error" role="alert">
-          {error}{' '}
-          <button className="btn" onClick={load}>Retry</button>
+          </div>
+          <label>
+            Search
+            <input
+              className="search"
+              type="search"
+              placeholder="Customer, subject or contact"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </label>
         </div>
-      )}
 
-      {!loading && !error && inquiries.length === 0 && (
-        <div className="card center">
-          {filtering ? (
-            <p className="muted">No inquiries match your search.</p>
-          ) : (
-            <>
-              <p className="muted">No inquiries yet.</p>
-              <Link to="/inquiries/new" className="btn btn-primary">Record the first one</Link>
-            </>
-          )}
-        </div>
-      )}
+        {loading && <p className="muted center">Loading inquiries…</p>}
 
-      {!loading && !error && inquiries.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Customer</th>
-              <th>Subject</th>
-              <th>Assigned to</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inquiries.map((i) => (
-              <tr key={i.id}>
-                <td>{i.id}</td>
-                <td>
-                  {i.customerName}
-                  <div className="muted">{i.contact}</div>
-                </td>
-                <td><Link to={`/inquiries/${i.id}`}>{i.subject}</Link></td>
-                <td>{i.assignedTo.name}</td>
-                <td><PriorityBadge priority={i.priority} /></td>
-                <td><StatusBadge status={i.status} /></td>
-                <td className="muted">{formatDate(i.updatedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        {!loading && error && (
+          <div className="alert alert-error" role="alert">
+            {error} <button className="btn" onClick={load}>Retry</button>
+          </div>
+        )}
+
+        {!loading && !error && visible.length === 0 && (
+          <div className="card center">
+            {filtering ? (
+              <p className="muted">No inquiries match your filters.</p>
+            ) : (
+              <>
+                <p className="muted">No inquiries yet.</p>
+                <Link to="/inquiries/new" className="btn btn-primary">Record the first one</Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && visible.length > 0 && <InquiryTable inquiries={visible} />}
+      </main>
     </>
   )
 }

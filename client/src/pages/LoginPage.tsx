@@ -12,7 +12,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  if (user) return <Navigate to="/inquiries" replace />
+  if (user) return <Navigate to="/" replace />
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -24,7 +24,7 @@ export function LoginPage() {
     setSubmitting(true)
     try {
       await login(email, password)
-      navigate(location.state?.from ?? '/inquiries', { replace: true })
+      navigate(location.state?.from ?? '/', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Sign in failed')
     } finally {
@@ -33,23 +33,38 @@ export function LoginPage() {
   }
 
   return (
-    <main className="container narrow">
-      <h1>Sign in</h1>
-      <p className="muted">Customer Inquiry Management</p>
-      <form onSubmit={handleSubmit} noValidate className="card">
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus />
-        </label>
-        <label>
-          Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-        </label>
-        {error && <p className="alert alert-error" role="alert">{error}</p>}
-        <button className="btn btn-primary" type="submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-    </main>
+    <div className="login">
+      <div className="login-form-side">
+        <form onSubmit={handleSubmit} noValidate className="login-form">
+          <div className="login-brand">
+            <img src="/logo.png" alt="" className="brand-logo" />
+            Coffee Ninja
+          </div>
+          <h1>Welcome back</h1>
+          <p className="muted">Sign in to the inquiry workspace.</p>
+          <label>
+            Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus />
+          </label>
+          <label>
+            Password
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          </label>
+          {error && <p className="alert alert-error" role="alert">{error}</p>}
+          <button className="btn btn-navy btn-block" type="submit" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+      <div className="login-panel">
+        <div className="login-panel-ring ring-1"></div>
+        <div className="login-panel-ring ring-2"></div>
+        <div className="login-panel-text">
+          <img src="/logo.png" alt="Coffee Ninja" className="login-panel-logo" />
+          <h2>Every customer inquiry, tracked from first contact to resolved.</h2>
+          <p>Record requests, see who is handling them, and move each one through New, In Progress and Resolved.</p>
+        </div>
+      </div>
+    </div>
   )
 }
