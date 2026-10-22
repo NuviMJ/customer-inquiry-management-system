@@ -201,7 +201,7 @@ export function InquiryDetailPage() {
                     disabled={saving}
                     onClick={() => changeStatus(next)}
                   >
-                    {statusIcon[next]} {actionLabel[next]}
+                    {statusIcon[next]} {inquiry.status === 'Resolved' ? 'Reopen' : actionLabel[next]}
                   </button>
                 ))}
                 <span className="muted" style={{ fontSize: 13 }}>
