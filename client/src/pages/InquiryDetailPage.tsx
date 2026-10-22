@@ -116,6 +116,7 @@ export function InquiryDetailPage() {
 
   const currentIndex = STATUSES.indexOf(inquiry.status)
   const canReassign = user?.role === 'manager'
+  const inProgress = inquiry.status === 'In Progress'
 
   return (
     <>
@@ -227,7 +228,7 @@ export function InquiryDetailPage() {
                   {canReassign ? (
                     <select
                       value={inquiry.assignedTo.id}
-                      disabled={saving || staff.length === 0}
+                      disabled={saving || staff.length === 0 || inProgress}
                       onChange={(e) => update({ assignedTo: Number(e.target.value) }, 'Assignee')}
                     >
                       {staff.length === 0 && <option value={inquiry.assignedTo.id}>{inquiry.assignedTo.name}</option>}
@@ -240,6 +241,11 @@ export function InquiryDetailPage() {
                   )}
                 </label>
                 {!canReassign && <span className="muted" style={{ fontSize: 13 }}>Only managers can reassign.</span>}
+                {canReassign && inProgress && (
+                  <span className="problem-text" style={{ fontSize: 13 }}>
+                    Already in progress. It cannot be reassigned until it is resolved.
+                  </span>
+                )}
               </div>
             </div>
           </div>

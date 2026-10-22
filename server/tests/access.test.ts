@@ -32,4 +32,20 @@ describe('inquiry access rule', () => {
     expect(res.status).toBe(200)
     expect(res.body.inquiry.id).toBe(4)
   })
+
+  // Picks any In Progress inquiry so the test survives status changes made in the UI
+  it('blocks reassigning an inquiry that is already in progress', async () => {
+    const cookie = await loginCookie('manager@coffeeninja.test')
+    const list = await request(app).get('/api/inquiries?status=In Progress').set('Cookie', cookie)
+    const inquiry = list.body.inquiries[0]
+    expect(inquiry).toBeDefined()
+
+    const users = await request(app).get('/api/users').set('Cookie', cookie)
+    const other = users.body.users.find((u: { id: number }) => u.id !== inquiry.assignedTo.id)
+
+    const res = await request(app).patch(`/api/inquiries/${inquiry.id}`).set('Cookie', cookie).send({ assignedTo: other.id })
+    expect(res.status).toBe(409)
+    expect(res.body.error.code).toBe('CONFLICT')
+    expect(res.body.error.details.reason).toBe('IN_PROGRESS')
+  })
 })
