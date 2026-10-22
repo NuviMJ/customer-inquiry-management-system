@@ -15,7 +15,7 @@ export interface Inquiry {
   createdAt: string
   updatedAt: string
   createdBy: { id: number; name: string }
-  assignedTo: { id: number; name: string }
+  assignedTo: { id: number; name: string } | null
   updatedBy: { id: number; name: string }
 }
 
@@ -24,17 +24,22 @@ const SELECT = `
   SELECT i.id, i.customer_name AS "customerName", i.contact, i.subject, i.description,
          i.status, i.priority, i.created_at AS "createdAt", i.updated_at AS "updatedAt",
          json_build_object('id', c.id, 'name', c.name) AS "createdBy",
-         json_build_object('id', a.id, 'name', a.name) AS "assignedTo",
+         CASE WHEN a.id IS NULL THEN NULL ELSE json_build_object('id', a.id, 'name', a.name) END AS "assignedTo",
          json_build_object('id', u.id, 'name', u.name) AS "updatedBy"
   FROM inquiries i
   JOIN users c ON c.id = i.created_by
-  JOIN users a ON a.id = i.assigned_to
+  LEFT JOIN users a ON a.id = i.assigned_to
   JOIN users u ON u.id = i.updated_by
 `
 
-// Access rule: staff see only inquiries assigned to them, managers see all.
+// Access rule: staff see inquiries assigned to them or unassigned; managers see all.
 export function canAccess(user: User, inquiry: Inquiry) {
-  return user.role === 'manager' || inquiry.assignedTo.id === user.id
+  return user.role === 'manager' || inquiry.assignedTo === null || inquiry.assignedTo.id === user.id
+}
+
+// Only the assignee or a manager can change status and priority.
+export function canModify(user: User, inquiry: Inquiry) {
+  return user.role === 'manager' || inquiry.assignedTo?.id === user.id
 }
 
 export async function listInquiries(user: User, query: ListQuery): Promise<Inquiry[]> {
@@ -43,7 +48,7 @@ export async function listInquiries(user: User, query: ListQuery): Promise<Inqui
 
   if (user.role !== 'manager') {
     params.push(user.id)
-    where.push(`i.assigned_to = $${params.length}`)
+    where.push(`(i.assigned_to = $${params.length} OR i.assigned_to IS NULL)`)
   }
   if (query.status) {
     params.push(query.status)
@@ -77,8 +82,9 @@ async function findOpenDuplicate(contact: string, subject: string) {
 }
 
 export async function createInquiry(user: User, input: CreateInquiryInput): Promise<Inquiry> {
-  const assignedTo = input.assignedTo ?? user.id
-  if (assignedTo !== user.id && user.role !== 'manager') {
+  // New inquiries are unassigned unless the creator takes it or a manager assigns it
+  const assignedTo = input.assignedTo ?? null
+  if (assignedTo !== null && assignedTo !== user.id && user.role !== 'manager') {
     throw new AppError('FORBIDDEN', 'Only managers can assign inquiries to other staff')
   }
 
@@ -108,7 +114,11 @@ export async function createInquiry(user: User, input: CreateInquiryInput): Prom
 }
 
 export async function changeStatus(user: User, id: number, input: ChangeStatusInput): Promise<Inquiry> {
-  await getInquiry(user, id) // 404 / 403 checks
+  const inquiry = await getInquiry(user, id) // 404 / 403 checks
+
+  if (!canModify(user, inquiry)) {
+    throw new AppError('FORBIDDEN', 'Claim this inquiry before changing its status', { reason: 'NOT_ASSIGNEE' })
+  }
 
   if (!canTransition(input.expectedStatus, input.status)) {
     throw new AppError('CONFLICT', `Cannot move an inquiry from ${input.expectedStatus} to ${input.status}`, {
@@ -133,15 +143,42 @@ export async function changeStatus(user: User, id: number, input: ChangeStatusIn
   return getInquiry(user, id)
 }
 
+export async function claimInquiry(user: User, id: number): Promise<Inquiry> {
+  // Checked before the access rule so a late claimer gets "already claimed", not "forbidden"
+  const { rows: found } = await pool.query<Inquiry>(`${SELECT} WHERE i.id = $1`, [id])
+  const inquiry = found[0]
+  if (!inquiry) throw new AppError('NOT_FOUND', `Inquiry #${id} does not exist`)
+  if (inquiry.assignedTo) {
+    throw new AppError('CONFLICT', `Already claimed by ${inquiry.assignedTo.name}`, { reason: 'CLAIMED' })
+  }
+
+  // Only the first claim finds assigned_to still NULL; a second one gets 0 rows.
+  const { rowCount } = await pool.query(
+    `UPDATE inquiries SET assigned_to = $1, updated_by = $1, updated_at = now()
+     WHERE id = $2 AND assigned_to IS NULL`,
+    [user.id, id],
+  )
+  if (rowCount === 0) {
+    const { rows } = await pool.query<Inquiry>(`${SELECT} WHERE i.id = $1`, [id])
+    throw new AppError('CONFLICT', `Already claimed by ${rows[0]?.assignedTo?.name ?? 'someone else'}`, { reason: 'CLAIMED' })
+  }
+
+  return getInquiry(user, id)
+}
+
 export async function updateInquiry(user: User, id: number, input: UpdateInquiryInput): Promise<Inquiry> {
   const current = await getInquiry(user, id)
 
+  if (!canModify(user, current)) {
+    throw new AppError('FORBIDDEN', 'Claim this inquiry before changing it', { reason: 'NOT_ASSIGNEE' })
+  }
   if (input.assignedTo !== undefined && user.role !== 'manager') {
     throw new AppError('FORBIDDEN', 'Only managers can reassign inquiries')
   }
 
   // Work in progress stays with the person doing it
-  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo.id && current.status === 'In Progress') {
+  const changingAssignee = input.assignedTo !== undefined && input.assignedTo !== (current.assignedTo?.id ?? null)
+  if (changingAssignee && current.status === 'In Progress') {
     throw new AppError('CONFLICT', 'This inquiry is already in progress and cannot be reassigned', {
       reason: 'IN_PROGRESS',
     })
@@ -151,10 +188,10 @@ export async function updateInquiry(user: User, id: number, input: UpdateInquiry
     await pool.query(
       `UPDATE inquiries
        SET priority = COALESCE($1, priority),
-           assigned_to = COALESCE($2, assigned_to),
-           updated_by = $3, updated_at = now()
-       WHERE id = $4`,
-      [input.priority === undefined ? null : input.priority, input.assignedTo ?? null, user.id, id],
+           assigned_to = CASE WHEN $2::boolean THEN $3::integer ELSE assigned_to END,
+           updated_by = $4, updated_at = now()
+       WHERE id = $5`,
+      [input.priority === undefined ? null : input.priority, input.assignedTo !== undefined, input.assignedTo ?? null, user.id, id],
     )
   } catch (err) {
     if ((err as { code?: string }).code === '23503') {

@@ -44,6 +44,19 @@ a:hover { color: var(--primary); }
 .prio-low .prio-dot { background: #2A9D8F; }
 .prio-high { color: var(--red-text); font-weight: 600; }
 .time { white-space: nowrap; }
+/* Unassigned rows get a teal tint and left bar so they stand out in any list */
+.unassigned { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; border: 1px dashed var(--primary); color: var(--primary); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.row-unassigned td { background: #EAF5F6; }
+.row-unassigned td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+.row-link.row-unassigned:hover td { background: var(--teal-tint); }
+
+/* Staff list sections: shared pool vs own work */
+.section { display: flex; flex-direction: column; gap: 10px; }
+.section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.section-head .count { display: inline-block; min-width: 22px; padding: 1px 8px; border-radius: 999px; background: var(--teal-tint); color: var(--navy); font-size: 13px; font-weight: 600; text-align: center; margin-left: 6px; }
+.check { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+.check input { width: 16px; height: 16px; margin: 0; }
+.check .muted { grid-column: 2; }
 
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
@@ -83,7 +96,7 @@ a:hover { color: var(--primary); }
 .card-body { padding: 18px; }
 .card-body.stack { display: flex; flex-direction: column; gap: 14px; }
 
-.stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
 .stat { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; text-decoration: none; color: var(--text); }
 .stat:hover { border-color: var(--primary); color: var(--text); }
 .stat-label { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }

@@ -28,7 +28,7 @@ export interface Inquiry {
   createdAt: string
   updatedAt: string
   createdBy: { id: number; name: string }
-  assignedTo: { id: number; name: string }
+  assignedTo: { id: number; name: string } | null // null = unassigned
   updatedBy: { id: number; name: string }
 }
 

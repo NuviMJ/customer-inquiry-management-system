@@ -53,10 +53,12 @@ export const api = {
     subject: string
     description: string
     priority?: Priority | null
+    assignedTo?: number
   }) => request<{ inquiry: Inquiry }>('/inquiries', 'POST', input),
   changeStatus: (id: number, status: Status, expectedStatus: Status) =>
     request<{ inquiry: Inquiry }>('/inquiries/' + id + '/status', 'PATCH', { status, expectedStatus }),
-  updateInquiry: (id: number, input: { priority?: Priority | null; assignedTo?: number }) =>
+  claimInquiry: (id: number) => request<{ inquiry: Inquiry }>('/inquiries/' + id + '/claim', 'POST'),
+  updateInquiry: (id: number, input: { priority?: Priority | null; assignedTo?: number | null }) =>
     request<{ inquiry: Inquiry }>('/inquiries/' + id, 'PATCH', input),
 
   listUsers: () => request<{ users: UserSummary[] }>('/users'),

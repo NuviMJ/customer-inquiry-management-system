@@ -27,7 +27,7 @@ export function InquiryTable({ inquiries }: { inquiries: Inquiry[] }) {
           {inquiries.map((i) => (
             <tr
               key={i.id}
-              className={`row-link ${isOpen(i) ? '' : 'row-resolved'}`}
+              className={`row-link ${isOpen(i) ? '' : 'row-resolved'} ${i.assignedTo === null ? 'row-unassigned' : ''}`}
               onClick={() => navigate(`/inquiries/${i.id}`)}
             >
               <td className="muted">{i.id}</td>
@@ -36,7 +36,7 @@ export function InquiryTable({ inquiries }: { inquiries: Inquiry[] }) {
                 <div className="sub">{i.contact}</div>
               </td>
               <td className="subject">{i.subject}</td>
-              <td>{i.assignedTo.name}</td>
+              <td>{i.assignedTo ? i.assignedTo.name : <span className="unassigned">○ Unassigned</span>}</td>
               <td><PriorityBadge priority={i.priority} /></td>
               <td><StatusBadge status={i.status} /></td>
               <td title={formatDate(i.updatedAt)}>

@@ -9,8 +9,11 @@ const users = [
   { name: 'Nimali Fernando', email: 'nimali@coffeeninja.test', role: 'staff' },
 ]
 
-// [customer, contact, subject, description, status, priority, assignee email]
+// [customer, contact, subject, description, status, priority, assignee email or null]
+// Unassigned ones are recorded by the manager and can be claimed by any staff member.
 const inquiries = [
+  ['Chamari Dias', 'chamari@example.com', 'Refund for damaged beans', 'Bag arrived torn, half the beans spilled. Wants a refund or replacement.', 'New', 'High', null],
+  ['Nuwan Herath', '+94 76 222 1100', 'Opening hours on holidays', 'Asks whether the shop is open on the Poya day next week.', 'New', 'Low', null],
   ['Ruwan Jayasuriya', 'ruwan@example.com', 'Espresso machine not heating', 'Machine bought last month stops heating after 10 minutes.', 'New', 'High', 'amal@coffeeninja.test'],
   ['Dilani Wickrama', '+94 77 123 4567', 'Bulk order for office', 'Needs a quote for 20 kg of beans monthly.', 'In Progress', 'Medium', 'amal@coffeeninja.test'],
   ['Kasun Bandara', 'kasun.b@example.com', 'Grinder replacement part', 'Asks whether burr sets for model G2 are in stock.', 'Resolved', 'Low', 'amal@coffeeninja.test'],
@@ -31,13 +34,14 @@ export async function seed(pool: Pool) {
     idByEmail.set(u.email, rows[0].id)
   }
 
+  const managerId = idByEmail.get('manager@coffeeninja.test')
   for (const [customer, contact, subject, description, status, priority, assignee] of inquiries) {
-    const userId = idByEmail.get(assignee)
+    const assigneeId = assignee ? idByEmail.get(assignee) : null
     await pool.query(
       `INSERT INTO inquiries
          (customer_name, contact, subject, description, status, priority, created_by, assigned_to, updated_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $7)`,
-      [customer, contact, subject, description, status, priority, userId],
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $7)`,
+      [customer, contact, subject, description, status, priority, assigneeId ?? managerId, assigneeId],
     )
   }
 

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
+import { useAuth } from '../AuthContext'
 import { PageHeader } from '../components/PageHeader'
 import type { Priority } from '../types'
 
@@ -26,7 +27,9 @@ function validate(v: FormValues) {
 
 export function NewInquiryPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [values, setValues] = useState<FormValues>(empty)
+  const [assignToMe, setAssignToMe] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormValues, string>>>({})
   const [error, setError] = useState<string | null>(null)
   const [duplicateId, setDuplicateId] = useState<number | null>(null)
@@ -56,6 +59,7 @@ export function NewInquiryPage() {
         subject: values.subject,
         description: values.description,
         priority: values.priority || null,
+        assignedTo: assignToMe && user ? user.id : undefined,
       })
       // The detail page shows the "saved" notice
       navigate(`/inquiries/${data.inquiry.id}`, { state: { saved: true } })
@@ -134,6 +138,11 @@ export function NewInquiryPage() {
                 <option value="Low">Low</option>
               </select>
             ))}
+            <label className="check">
+              <input type="checkbox" checked={assignToMe} onChange={(e) => setAssignToMe(e.target.checked)} />
+              Assign this inquiry to me
+              <span className="muted" style={{ fontSize: 13 }}>Otherwise it stays unassigned and any staff member can claim it.</span>
+            </label>
 
             {error && (
               <div className="alert alert-error" role="alert">

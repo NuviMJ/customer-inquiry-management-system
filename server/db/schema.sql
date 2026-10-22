@@ -21,7 +21,7 @@ CREATE TABLE inquiries (
                 CHECK (status IN ('New', 'In Progress', 'Resolved')),
   priority      TEXT CHECK (priority IN ('High', 'Medium', 'Low')),
   created_by    INTEGER NOT NULL REFERENCES users(id),
-  assigned_to   INTEGER NOT NULL REFERENCES users(id),
+  assigned_to   INTEGER REFERENCES users(id), -- NULL = unassigned, anyone can claim
   updated_by    INTEGER NOT NULL REFERENCES users(id),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()

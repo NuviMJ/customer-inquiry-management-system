@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import { changeStatus, createInquiry, getInquiry, listInquiries, updateInquiry } from '../services/inquiries.js'
+import { changeStatus, claimInquiry, createInquiry, getInquiry, listInquiries, updateInquiry } from '../services/inquiries.js'
 import { changeStatusSchema, createInquirySchema, idParamSchema, listQuerySchema, updateInquirySchema } from '../validation/inquiries.js'
 
 export const inquiriesRouter = Router()
@@ -40,6 +40,16 @@ inquiriesRouter.patch('/:id/status', async (req, res, next) => {
     const { id } = idParamSchema.parse(req.params)
     const input = changeStatusSchema.parse(req.body)
     res.json({ inquiry: await changeStatus(req.user!, id, input) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// Take an unassigned inquiry; first claim wins
+inquiriesRouter.post('/:id/claim', async (req, res, next) => {
+  try {
+    const { id } = idParamSchema.parse(req.params)
+    res.json({ inquiry: await claimInquiry(req.user!, id) })
   } catch (err) {
     next(err)
   }
