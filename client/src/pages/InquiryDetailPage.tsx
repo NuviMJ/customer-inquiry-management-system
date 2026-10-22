@@ -201,7 +201,7 @@ export function InquiryDetailPage() {
                     disabled={saving}
                     onClick={() => changeStatus(next)}
                   >
-                    {statusIcon[next]} {actionLabel[next]}
+                    {statusIcon[next]} {inquiry.status === 'Resolved' ? 'Reopen' : actionLabel[next]}
                   </button>
                 ))}
                 <span className="muted" style={{ fontSize: 13 }}>
@@ -223,7 +223,8 @@ export function InquiryDetailPage() {
                     onChange={(e) => update({ priority: (e.target.value || null) as Priority | null }, 'Priority')}
                   >
                     <option value="">Not set</option>
-                    <option value="High">▲ High</option>
+                    <option value="High">High</option>
+                <option value="Medium">Medium</option>
                     <option value="Low">Low</option>
                   </select>
                 </label>

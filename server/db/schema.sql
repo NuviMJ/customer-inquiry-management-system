@@ -19,7 +19,7 @@ CREATE TABLE inquiries (
   description   TEXT NOT NULL,
   status        TEXT NOT NULL DEFAULT 'New'
                 CHECK (status IN ('New', 'In Progress', 'Resolved')),
-  priority      TEXT CHECK (priority IN ('High', 'Low')),
+  priority      TEXT CHECK (priority IN ('High', 'Medium', 'Low')),
   created_by    INTEGER NOT NULL REFERENCES users(id),
   assigned_to   INTEGER NOT NULL REFERENCES users(id),
   updated_by    INTEGER NOT NULL REFERENCES users(id),

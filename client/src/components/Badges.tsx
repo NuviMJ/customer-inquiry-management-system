@@ -21,8 +21,13 @@ export function StatusBadge({ status }: { status: Status }) {
   )
 }
 
+// Coloured square + label, deliberately different from the status pills
 export function PriorityBadge({ priority }: { priority: Priority | null }) {
   if (!priority) return <span className="muted">—</span>
-  if (priority === 'High') return <span className="high">▲ High</span>
-  return <span>Low</span>
+  return (
+    <span className={`prio prio-${priority.toLowerCase()}`}>
+      <span className="prio-dot"></span>
+      {priority}
+    </span>
+  )
 }

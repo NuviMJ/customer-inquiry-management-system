@@ -26,8 +26,14 @@ export function urgencyScore(i: Inquiry) {
   return (i.priority === 'High' ? 2 : 0) + (isStale(i) ? 1 : 0)
 }
 
+const priorityRank = { High: 3, Medium: 2, Low: 1 }
+
+// Urgency first, then priority, then most recently updated
 export function sortByUrgency(list: Inquiry[]) {
   return [...list].sort(
-    (a, b) => urgencyScore(b) - urgencyScore(a) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    (a, b) =>
+      urgencyScore(b) - urgencyScore(a) ||
+      (priorityRank[b.priority ?? 'Low'] ?? 0) - (priorityRank[a.priority ?? 'Low'] ?? 0) ||
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   )
 }
