@@ -1,3 +1,23 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { Layout } from './components/Layout'
+import { RequireAuth } from './components/RequireAuth'
+import { InquiriesPage } from './pages/InquiriesPage'
+import { InquiryDetailPage } from './pages/InquiryDetailPage'
+import { LoginPage } from './pages/LoginPage'
+import { NewInquiryPage } from './pages/NewInquiryPage'
+
 export default function App() {
-  return <h1>Customer Inquiry Management</h1>
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<RequireAuth />}>
+        <Route element={<Layout />}>
+          <Route path="/inquiries" element={<InquiriesPage />} />
+          <Route path="/inquiries/new" element={<NewInquiryPage />} />
+          <Route path="/inquiries/:id" element={<InquiryDetailPage />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/inquiries" replace />} />
+    </Routes>
+  )
 }
