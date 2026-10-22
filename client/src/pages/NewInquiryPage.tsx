@@ -129,7 +129,8 @@ export function NewInquiryPage() {
             {field('priority', 'Priority (optional)', (
               <select value={values.priority} onChange={(e) => update('priority', e.target.value)}>
                 <option value="">Not set</option>
-                <option value="High">▲ High</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
               </select>
             ))}

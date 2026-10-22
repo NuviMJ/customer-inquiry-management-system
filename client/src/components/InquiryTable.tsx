@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { formatDate } from '../format'
+import { formatDate, timeAgo } from '../format'
 import type { Inquiry } from '../types'
-import { isOpen, isStale, staleText } from '../urgency'
+import { isOpen, isStale } from '../urgency'
 import { PriorityBadge, StatusBadge } from './Badges'
 
 // Shared by the dashboard and the inquiries page. Whole row opens the inquiry.
@@ -39,9 +39,10 @@ export function InquiryTable({ inquiries }: { inquiries: Inquiry[] }) {
               <td>{i.assignedTo.name}</td>
               <td><PriorityBadge priority={i.priority} /></td>
               <td><StatusBadge status={i.status} /></td>
-              <td>
-                {formatDate(i.updatedAt)}
-                {isStale(i) && <div className="problem-text">{staleText(i)}</div>}
+              <td title={formatDate(i.updatedAt)}>
+                <span className={`time ${isStale(i) ? 'problem-text' : ''}`}>
+                  {isStale(i) ? '⚠' : '◷'} {timeAgo(i.updatedAt)}
+                </span>
               </td>
               <td>
                 <Link to={`/inquiries/${i.id}`} className="chev" aria-label={`Open inquiry ${i.id}`} onClick={(e) => e.stopPropagation()}>

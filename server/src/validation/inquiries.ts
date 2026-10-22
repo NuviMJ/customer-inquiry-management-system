@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const STATUSES = ['New', 'In Progress', 'Resolved'] as const
-export const PRIORITIES = ['High', 'Low'] as const
+export const PRIORITIES = ['High', 'Medium', 'Low'] as const
 
 const emailLike = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneLike = /^\+?[\d][\d\s-]{6,}$/
@@ -20,7 +20,7 @@ export const createInquirySchema = z.object({
     .refine((v) => emailLike.test(v) || phoneLike.test(v), 'Enter an email address or phone number'),
   subject: z.string().trim().min(3, 'Subject needs at least 3 characters').max(120),
   description: z.string().trim().min(10, 'Description needs at least 10 characters').max(2000),
-  priority: z.enum(PRIORITIES, { message: 'Priority must be High or Low' }).nullish(),
+  priority: z.enum(PRIORITIES, { message: 'Priority must be High, Medium or Low' }).nullish(),
   assignedTo: z.number().int().positive().optional(),
 })
 
@@ -42,7 +42,7 @@ export const changeStatusSchema = z.object({
 
 export const updateInquirySchema = z
   .object({
-    priority: z.enum(PRIORITIES, { message: 'Priority must be High or Low' }).nullable().optional(),
+    priority: z.enum(PRIORITIES, { message: 'Priority must be High, Medium or Low' }).nullable().optional(),
     assignedTo: z.number().int().positive().optional(),
   })
   .refine((v) => v.priority !== undefined || v.assignedTo !== undefined, 'Nothing to update')

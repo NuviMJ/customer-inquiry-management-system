@@ -1,6 +1,6 @@
 export type Role = 'staff' | 'manager'
 export type Status = 'New' | 'In Progress' | 'Resolved'
-export type Priority = 'High' | 'Low'
+export type Priority = 'High' | 'Medium' | 'Low'
 
 export interface User {
   id: number

@@ -36,7 +36,14 @@ a:hover { color: var(--primary); }
 .sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
 .center { text-align: center; padding: 2rem; }
 .problem-text { color: var(--red-text); font-size: 14px; font-weight: 500; margin-top: 2px; }
-.high { color: var(--red-text); font-weight: 600; white-space: nowrap; }
+/* Priority: coloured square + label, so it never looks like a status pill */
+.prio { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; white-space: nowrap; }
+.prio-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.prio-high .prio-dot { background: var(--red); }
+.prio-medium .prio-dot { background: #F4A261; }
+.prio-low .prio-dot { background: #2A9D8F; }
+.prio-high { color: var(--red-text); font-weight: 600; }
+.time { white-space: nowrap; }
 
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 

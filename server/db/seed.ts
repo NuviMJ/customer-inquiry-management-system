@@ -12,7 +12,7 @@ const users = [
 // [customer, contact, subject, description, status, priority, assignee email]
 const inquiries = [
   ['Ruwan Jayasuriya', 'ruwan@example.com', 'Espresso machine not heating', 'Machine bought last month stops heating after 10 minutes.', 'New', 'High', 'amal@coffeeninja.test'],
-  ['Dilani Wickrama', '+94 77 123 4567', 'Bulk order for office', 'Needs a quote for 20 kg of beans monthly.', 'In Progress', null, 'amal@coffeeninja.test'],
+  ['Dilani Wickrama', '+94 77 123 4567', 'Bulk order for office', 'Needs a quote for 20 kg of beans monthly.', 'In Progress', 'Medium', 'amal@coffeeninja.test'],
   ['Kasun Bandara', 'kasun.b@example.com', 'Grinder replacement part', 'Asks whether burr sets for model G2 are in stock.', 'Resolved', 'Low', 'amal@coffeeninja.test'],
   ['Sanduni Rajapaksa', 'sanduni@example.com', 'Barista training session', 'Wants to book a training session for 4 new staff.', 'New', null, 'nimali@coffeeninja.test'],
   ['Tharindu Peiris', '+94 71 987 6543', 'Late delivery complaint', 'Order #4521 arrived two days late, asks for compensation.', 'In Progress', 'High', 'nimali@coffeeninja.test'],

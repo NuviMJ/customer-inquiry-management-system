@@ -11,7 +11,7 @@ export interface Inquiry {
   subject: string
   description: string
   status: 'New' | 'In Progress' | 'Resolved'
-  priority: 'High' | 'Low' | null
+  priority: 'High' | 'Medium' | 'Low' | null
   createdAt: string
   updatedAt: string
   createdBy: { id: number; name: string }
