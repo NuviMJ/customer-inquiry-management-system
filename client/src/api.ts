@@ -60,4 +60,6 @@ export const api = {
     request<{ inquiry: Inquiry }>('/inquiries/' + id, 'PATCH', input),
 
   listUsers: () => request<{ users: UserSummary[] }>('/users'),
+  createStaff: (input: { name: string; email: string }) =>
+    request<{ user: UserSummary }>('/users', 'POST', input),
 }

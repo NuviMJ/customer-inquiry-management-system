@@ -57,7 +57,8 @@ export function NewInquiryPage() {
         description: values.description,
         priority: values.priority || null,
       })
-      navigate(`/inquiries/${data.inquiry.id}`)
+      // The detail page shows the "saved" notice
+      navigate(`/inquiries/${data.inquiry.id}`, { state: { saved: true } })
     } catch (err) {
       if (err instanceof ApiError && err.code === 'VALIDATION_ERROR' && err.details?.fields) {
         setFieldErrors(err.details.fields)

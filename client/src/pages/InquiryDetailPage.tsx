@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { PriorityBadge, StatusBadge, statusIcon } from '../components/Badges'
@@ -14,10 +14,14 @@ type Notice = { kind: 'success' | 'warn' | 'error'; text: string } | null
 export function InquiryDetailPage() {
   const { id = '' } = useParams()
   const { user } = useAuth()
+  const location = useLocation()
   const [inquiry, setInquiry] = useState<Inquiry | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<ApiError | null>(null)
-  const [notice, setNotice] = useState<Notice>(null)
+  // Arriving from the New inquiry form shows a saved confirmation
+  const [notice, setNotice] = useState<Notice>(
+    location.state?.saved ? { kind: 'success', text: `Inquiry #${id} has been saved` } : null,
+  )
   const [saving, setSaving] = useState(false)
   const [staff, setStaff] = useState<UserSummary[]>([])
 
@@ -116,6 +120,7 @@ export function InquiryDetailPage() {
 
   const currentIndex = STATUSES.indexOf(inquiry.status)
   const canReassign = user?.role === 'manager'
+  const inProgress = inquiry.status === 'In Progress'
 
   return (
     <>
@@ -227,7 +232,7 @@ export function InquiryDetailPage() {
                   {canReassign ? (
                     <select
                       value={inquiry.assignedTo.id}
-                      disabled={saving || staff.length === 0}
+                      disabled={saving || staff.length === 0 || inProgress}
                       onChange={(e) => update({ assignedTo: Number(e.target.value) }, 'Assignee')}
                     >
                       {staff.length === 0 && <option value={inquiry.assignedTo.id}>{inquiry.assignedTo.name}</option>}
@@ -240,6 +245,11 @@ export function InquiryDetailPage() {
                   )}
                 </label>
                 {!canReassign && <span className="muted" style={{ fontSize: 13 }}>Only managers can reassign.</span>}
+                {canReassign && inProgress && (
+                  <span className="problem-text" style={{ fontSize: 13 }}>
+                    Already in progress. It cannot be reassigned until it is resolved.
+                  </span>
+                )}
               </div>
             </div>
           </div>

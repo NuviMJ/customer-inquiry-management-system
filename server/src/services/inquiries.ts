@@ -134,10 +134,17 @@ export async function changeStatus(user: User, id: number, input: ChangeStatusIn
 }
 
 export async function updateInquiry(user: User, id: number, input: UpdateInquiryInput): Promise<Inquiry> {
-  await getInquiry(user, id)
+  const current = await getInquiry(user, id)
 
   if (input.assignedTo !== undefined && user.role !== 'manager') {
     throw new AppError('FORBIDDEN', 'Only managers can reassign inquiries')
+  }
+
+  // Work in progress stays with the person doing it
+  if (input.assignedTo !== undefined && input.assignedTo !== current.assignedTo.id && current.status === 'In Progress') {
+    throw new AppError('CONFLICT', 'This inquiry is already in progress and cannot be reassigned', {
+      reason: 'IN_PROGRESS',
+    })
   }
 
   try {
