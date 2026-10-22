@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { PriorityBadge, StatusBadge, statusIcon } from '../components/Badges'
@@ -15,6 +15,7 @@ export function InquiryDetailPage() {
   const { id = '' } = useParams()
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [inquiry, setInquiry] = useState<Inquiry | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<ApiError | null>(null)
@@ -91,6 +92,20 @@ export function InquiryDetailPage() {
     }
   }
 
+  async function remove() {
+    if (!inquiry) return
+    if (!window.confirm(`Delete inquiry #${inquiry.id} "${inquiry.subject}"? This cannot be undone.`)) return
+    setSaving(true)
+    setNotice(null)
+    try {
+      await api.deleteInquiry(inquiry.id)
+      navigate('/inquiries', { state: { deleted: inquiry.id } })
+    } catch (err) {
+      setNotice({ kind: 'error', text: err instanceof ApiError ? err.message : 'Could not delete this inquiry' })
+      setSaving(false)
+    }
+  }
+
   async function update(input: { priority?: Priority | null; assignedTo?: number | null }, label: string) {
     if (!inquiry) return
     setSaving(true)
@@ -151,7 +166,18 @@ export function InquiryDetailPage() {
       <PageHeader
         title={`#${inquiry.id}`}
         crumb={{ label: 'Inquiries', to: '/inquiries' }}
-        action={<Link to="/inquiries" className="btn">← Back to list</Link>}
+        action={
+          <div className="btn-row">
+            <Link to="/inquiries" className="btn">← Back to list</Link>
+            {user?.role === 'manager' && (
+              <button className="btn-icon" title="Delete inquiry" aria-label="Delete inquiry" disabled={saving} onClick={remove}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            )}
+          </div>
+        }
       />
       <main className="page">
         <div className="page-head">

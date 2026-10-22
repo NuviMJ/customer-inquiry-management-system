@@ -166,6 +166,13 @@ export async function claimInquiry(user: User, id: number): Promise<Inquiry> {
   return getInquiry(user, id)
 }
 
+// Managers only; deletion is permanent
+export async function deleteInquiry(user: User, id: number): Promise<void> {
+  if (user.role !== 'manager') throw new AppError('FORBIDDEN', 'Only managers can delete inquiries')
+  const { rowCount } = await pool.query('DELETE FROM inquiries WHERE id = $1', [id])
+  if (rowCount === 0) throw new AppError('NOT_FOUND', `Inquiry #${id} does not exist`)
+}
+
 export async function updateInquiry(user: User, id: number, input: UpdateInquiryInput): Promise<Inquiry> {
   const current = await getInquiry(user, id)
 

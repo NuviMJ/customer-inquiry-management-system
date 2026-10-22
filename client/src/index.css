@@ -45,6 +45,11 @@ a:hover { color: var(--primary); }
 .prio-high { color: var(--red-text); font-weight: 600; }
 .time { white-space: nowrap; }
 /* Unassigned rows get a teal tint and left bar so they stand out in any list */
+/* Quiet icon button, e.g. the delete bin on the detail page */
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--red-text); padding: 0; cursor: pointer; }
+.btn-icon:hover, .btn-icon:focus-visible { background: var(--red-tint); border-color: var(--red); }
+.btn-icon:disabled { opacity: 0.4; cursor: default; }
+
 .unassigned { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; border: 1px dashed var(--primary); color: var(--primary); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .row-unassigned td { background: #EAF5F6; }
 .row-unassigned td:first-child { box-shadow: inset 3px 0 0 var(--primary); }

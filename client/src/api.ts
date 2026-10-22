@@ -58,6 +58,7 @@ export const api = {
   changeStatus: (id: number, status: Status, expectedStatus: Status) =>
     request<{ inquiry: Inquiry }>('/inquiries/' + id + '/status', 'PATCH', { status, expectedStatus }),
   claimInquiry: (id: number) => request<{ inquiry: Inquiry }>('/inquiries/' + id + '/claim', 'POST'),
+  deleteInquiry: (id: number) => request<void>('/inquiries/' + id, 'DELETE'),
   updateInquiry: (id: number, input: { priority?: Priority | null; assignedTo?: number | null }) =>
     request<{ inquiry: Inquiry }>('/inquiries/' + id, 'PATCH', input),
 
