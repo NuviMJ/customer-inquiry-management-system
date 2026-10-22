@@ -9,6 +9,14 @@ export interface User {
   role: Role
 }
 
+// What /api/users returns for managers: users plus their assigned counts
+export interface UserSummary extends User {
+  createdAt: string
+  newCount: number
+  inProgressCount: number
+  resolvedCount: number
+}
+
 export interface Inquiry {
   id: number
   customerName: string

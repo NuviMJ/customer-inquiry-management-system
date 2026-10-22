@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
+import { PageHeader } from '../components/PageHeader'
 import type { Priority } from '../types'
 
 interface FormValues {
@@ -84,66 +85,74 @@ export function NewInquiryPage() {
 
   return (
     <>
-      <h1>New inquiry</h1>
-      <p className="muted">Record what the customer asked for so it can be tracked.</p>
-
-      <form onSubmit={handleSubmit} noValidate className="card">
-        {field('customerName', 'Customer name', (
-          <input
-            value={values.customerName}
-            onChange={(e) => update('customerName', e.target.value)}
-            className={fieldErrors.customerName ? 'invalid' : ''}
-            autoFocus
-          />
-        ))}
-        {field('contact', 'Contact (email or phone)', (
-          <input
-            value={values.contact}
-            onChange={(e) => update('contact', e.target.value)}
-            className={fieldErrors.contact ? 'invalid' : ''}
-          />
-        ))}
-        {field('subject', 'Subject', (
-          <input
-            value={values.subject}
-            onChange={(e) => update('subject', e.target.value)}
-            className={fieldErrors.subject ? 'invalid' : ''}
-          />
-        ))}
-        {field('description', 'Description', (
-          <textarea
-            rows={4}
-            value={values.description}
-            onChange={(e) => update('description', e.target.value)}
-            className={fieldErrors.description ? 'invalid' : ''}
-          />
-        ))}
-        {field('priority', 'Priority (optional)', (
-          <select value={values.priority} onChange={(e) => update('priority', e.target.value)}>
-            <option value="">Not set</option>
-            <option value="High">High</option>
-            <option value="Low">Low</option>
-          </select>
-        ))}
-
-        {error && (
-          <div className="alert alert-error" role="alert">
-            {error}
-            {duplicateId && (
-              <>
-                {' '}<Link to={`/inquiries/${duplicateId}`}>Open inquiry #{duplicateId}</Link>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="btn-row">
-          <button className="btn btn-primary" type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : 'Save inquiry'}
-          </button>
-          <Link to="/inquiries" className="btn">Cancel</Link>
+      <PageHeader title="New inquiry" crumb={{ label: 'Inquiries', to: '/inquiries' }} />
+      <main className="page">
+        <div>
+          <h1>New inquiry</h1>
+          <div className="sub">Record what the customer asked for so it can be tracked.</div>
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} noValidate className="card form-card">
+          <h2 className="card-title">Customer and request</h2>
+          <div className="card-body form">
+            {field('customerName', 'Customer name', (
+              <input
+                value={values.customerName}
+                onChange={(e) => update('customerName', e.target.value)}
+                className={fieldErrors.customerName ? 'invalid' : ''}
+                autoFocus
+              />
+            ))}
+            {field('contact', 'Contact (email or phone)', (
+              <input
+                value={values.contact}
+                onChange={(e) => update('contact', e.target.value)}
+                className={fieldErrors.contact ? 'invalid' : ''}
+              />
+            ))}
+            {field('subject', 'Subject', (
+              <input
+                value={values.subject}
+                onChange={(e) => update('subject', e.target.value)}
+                className={fieldErrors.subject ? 'invalid' : ''}
+              />
+            ))}
+            {field('description', 'Description', (
+              <textarea
+                rows={4}
+                value={values.description}
+                onChange={(e) => update('description', e.target.value)}
+                className={fieldErrors.description ? 'invalid' : ''}
+              />
+            ))}
+            {field('priority', 'Priority (optional)', (
+              <select value={values.priority} onChange={(e) => update('priority', e.target.value)}>
+                <option value="">Not set</option>
+                <option value="High">▲ High</option>
+                <option value="Low">Low</option>
+              </select>
+            ))}
+
+            {error && (
+              <div className="alert alert-error" role="alert">
+                {error}
+                {duplicateId && (
+                  <>
+                    {' '}<Link to={`/inquiries/${duplicateId}`}>Open inquiry #{duplicateId}</Link>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="btn-row">
+              <button className="btn btn-primary" type="submit" disabled={submitting}>
+                {submitting ? 'Saving…' : 'Save inquiry'}
+              </button>
+              <Link to="/inquiries" className="btn">Cancel</Link>
+            </div>
+          </div>
+        </form>
+      </main>
     </>
   )
 }

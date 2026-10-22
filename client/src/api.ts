@@ -1,4 +1,4 @@
-import type { Inquiry, Priority, Status, User } from './types'
+import type { Inquiry, Priority, Status, User, UserSummary } from './types'
 
 // Mirrors the server's { error: { code, message, details } } shape
 export class ApiError extends Error {
@@ -59,5 +59,5 @@ export const api = {
   updateInquiry: (id: number, input: { priority?: Priority | null; assignedTo?: number }) =>
     request<{ inquiry: Inquiry }>('/inquiries/' + id, 'PATCH', input),
 
-  listUsers: () => request<{ users: User[] }>('/users'),
+  listUsers: () => request<{ users: UserSummary[] }>('/users'),
 }
