@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth.js'
-import { changeStatus, claimInquiry, createInquiry, getInquiry, listInquiries, updateInquiry } from '../services/inquiries.js'
+import { changeStatus, claimInquiry, createInquiry, deleteInquiry, getInquiry, listInquiries, updateInquiry } from '../services/inquiries.js'
 import { changeStatusSchema, createInquirySchema, idParamSchema, listQuerySchema, updateInquirySchema } from '../validation/inquiries.js'
 
 export const inquiriesRouter = Router()
@@ -50,6 +50,16 @@ inquiriesRouter.post('/:id/claim', async (req, res, next) => {
   try {
     const { id } = idParamSchema.parse(req.params)
     res.json({ inquiry: await claimInquiry(req.user!, id) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+inquiriesRouter.delete('/:id', async (req, res, next) => {
+  try {
+    const { id } = idParamSchema.parse(req.params)
+    await deleteInquiry(req.user!, id)
+    res.status(204).end()
   } catch (err) {
     next(err)
   }

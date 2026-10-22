@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { statusIcon } from '../components/Badges'
@@ -20,6 +20,7 @@ const focusLabel: Record<string, string> = {
 export function InquiriesPage() {
   const { user } = useAuth()
   const [params, setParams] = useSearchParams()
+  const deletedId: number | undefined = useLocation().state?.deleted
   const status = params.get('status') ?? ''
   const focus = params.get('focus') ?? ''
   const [q, setQ] = useState('')
@@ -80,6 +81,8 @@ export function InquiriesPage() {
             {user?.role === 'manager' ? 'All inquiries' : 'Inquiries assigned to you or unassigned'}, sorted by what needs attention first
           </div>
         </div>
+
+        {deletedId && <div className="alert alert-success" role="alert">Inquiry #{deletedId} has been deleted</div>}
 
         {focus && focusLabel[focus] && (
           <div>
