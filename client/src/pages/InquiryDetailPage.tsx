@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { PriorityBadge, StatusBadge, statusIcon } from '../components/Badges'
@@ -14,10 +14,14 @@ type Notice = { kind: 'success' | 'warn' | 'error'; text: string } | null
 export function InquiryDetailPage() {
   const { id = '' } = useParams()
   const { user } = useAuth()
+  const location = useLocation()
   const [inquiry, setInquiry] = useState<Inquiry | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<ApiError | null>(null)
-  const [notice, setNotice] = useState<Notice>(null)
+  // Arriving from the New inquiry form shows a saved confirmation
+  const [notice, setNotice] = useState<Notice>(
+    location.state?.saved ? { kind: 'success', text: `Inquiry #${id} has been saved` } : null,
+  )
   const [saving, setSaving] = useState(false)
   const [staff, setStaff] = useState<UserSummary[]>([])
 
