@@ -39,7 +39,8 @@ export function DashboardPage() {
   const open = inquiries.filter(isOpen)
   const highOpen = open.filter((i) => i.priority === 'High')
   const stale = open.filter(isStale)
-  const mine = open.filter((i) => i.assignedTo.id === user?.id)
+  const mine = open.filter((i) => i.assignedTo?.id === user?.id)
+  const unassigned = open.filter((i) => i.assignedTo === null)
   const needsAttention = sortByUrgency(open).filter((i) => urgencyScore(i) > 0).slice(0, 5)
 
   return (
@@ -75,6 +76,10 @@ export function DashboardPage() {
               <Link to="/inquiries?focus=stale" className="card stat">
                 <span className="stat-label">No update in 24h <span className="arrow">→</span></span>
                 <span className={`stat-value ${stale.length ? 'problem' : ''}`}>{stale.length}</span>
+              </Link>
+              <Link to="/inquiries?focus=unassigned" className="card stat">
+                <span className="stat-label">Unassigned <span className="arrow">→</span></span>
+                <span className="stat-value">{unassigned.length}</span>
               </Link>
               <Link to="/inquiries?focus=mine" className="card stat">
                 <span className="stat-label">My open work <span className="arrow">→</span></span>

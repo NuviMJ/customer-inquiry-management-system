@@ -11,7 +11,35 @@ async function loginCookie(email: string) {
 }
 
 describe('inquiry access rule', () => {
-  afterAll(() => pool.end())
+  afterAll(async () => {
+    await pool.query(`DELETE FROM inquiries WHERE subject = 'TEST claim race'`)
+    await pool.end()
+  })
+
+  it('lets only the first of two staff claim an unassigned inquiry', async () => {
+    const manager = (await pool.query(`SELECT id FROM users WHERE email = 'manager@coffeeninja.test'`)).rows[0]
+    const { rows } = await pool.query(
+      `INSERT INTO inquiries (customer_name, contact, subject, description, created_by, updated_by)
+       VALUES ('Test', 'claim@test.local', 'TEST claim race', 'Used by the access test.', $1, $1) RETURNING id`,
+      [manager.id],
+    )
+    const id = rows[0].id
+
+    const amal = await loginCookie('amal@coffeeninja.test')
+    const nimali = await loginCookie('nimali@coffeeninja.test')
+
+    const first = await request(app).post(`/api/inquiries/${id}/claim`).set('Cookie', amal)
+    expect(first.status).toBe(200)
+    expect(first.body.inquiry.assignedTo.name).toBe('Amal Silva')
+
+    const second = await request(app).post(`/api/inquiries/${id}/claim`).set('Cookie', nimali)
+    expect(second.status).toBe(409)
+    expect(second.body.error.details.reason).toBe('CLAIMED')
+
+    // Once claimed it is no longer visible to the other staff member
+    const view = await request(app).get(`/api/inquiries/${id}`).set('Cookie', nimali)
+    expect(view.status).toBe(403)
+  })
 
   it('rejects requests without a session', async () => {
     const res = await request(app).get('/api/inquiries/4')

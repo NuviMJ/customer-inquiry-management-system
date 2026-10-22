@@ -3,6 +3,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { NewInquiryPage } from './NewInquiryPage'
 
+// The form only needs the signed-in user's id, so a fake context is enough
+vi.mock('../AuthContext', () => ({
+  useAuth: () => ({ user: { id: 2, name: 'Amal Silva', email: 'amal@coffeeninja.test', role: 'staff' } }),
+}))
+
 function renderPage() {
   return render(
     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

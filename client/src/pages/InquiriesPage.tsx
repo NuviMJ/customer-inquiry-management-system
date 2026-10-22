@@ -13,6 +13,7 @@ const focusLabel: Record<string, string> = {
   open: 'Open inquiries',
   high: 'High priority open',
   stale: 'No update in 24h',
+  unassigned: 'Unassigned',
   mine: 'My open work',
 }
 
@@ -57,11 +58,17 @@ export function InquiriesPage() {
   if (focus === 'open') visible = visible.filter(isOpen)
   if (focus === 'high') visible = visible.filter((i) => isOpen(i) && i.priority === 'High')
   if (focus === 'stale') visible = visible.filter(isStale)
-  if (focus === 'mine') visible = visible.filter((i) => isOpen(i) && i.assignedTo.id === user?.id)
+  if (focus === 'unassigned') visible = visible.filter((i) => isOpen(i) && i.assignedTo === null)
+  if (focus === 'mine') visible = visible.filter((i) => isOpen(i) && i.assignedTo?.id === user?.id)
   if (status) visible = visible.filter((i) => i.status === status)
   visible = sortByUrgency(visible)
 
   const filtering = status !== '' || focus !== '' || q.trim() !== ''
+
+  // Staff get two sections so the shared pool and their own work are never mixed
+  const split = user?.role === 'staff' && !focus
+  const pool = visible.filter((i) => i.assignedTo === null)
+  const mine = visible.filter((i) => i.assignedTo !== null)
 
   return (
     <>
@@ -70,7 +77,7 @@ export function InquiriesPage() {
         <div>
           <h1>Inquiries</h1>
           <div className="sub">
-            {user?.role === 'manager' ? 'All inquiries' : 'Inquiries assigned to you'}, sorted by what needs attention first
+            {user?.role === 'manager' ? 'All inquiries' : 'Inquiries assigned to you or unassigned'}, sorted by what needs attention first
           </div>
         </div>
 
@@ -126,7 +133,34 @@ export function InquiriesPage() {
           </div>
         )}
 
-        {!loading && !error && visible.length > 0 && <InquiryTable inquiries={visible} />}
+        {!loading && !error && visible.length > 0 && !split && <InquiryTable inquiries={visible} />}
+
+        {!loading && !error && visible.length > 0 && split && (
+          <>
+            <section className="section">
+              <div className="section-head">
+                <h2>Unassigned <span className="count">{pool.length}</span></h2>
+                <span className="muted">Available for anyone to claim</span>
+              </div>
+              {pool.length > 0 ? (
+                <InquiryTable inquiries={pool} />
+              ) : (
+                <div className="card center muted">No unassigned inquiries right now.</div>
+              )}
+            </section>
+            <section className="section">
+              <div className="section-head">
+                <h2>Assigned to me <span className="count">{mine.length}</span></h2>
+                <span className="muted">Only you or a manager can change these</span>
+              </div>
+              {mine.length > 0 ? (
+                <InquiryTable inquiries={mine} />
+              ) : (
+                <div className="card center muted">Nothing assigned to you. Claim one from the list above.</div>
+              )}
+            </section>
+          </>
+        )}
       </main>
     </>
   )

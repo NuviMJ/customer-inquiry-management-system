@@ -43,7 +43,7 @@ export const changeStatusSchema = z.object({
 export const updateInquirySchema = z
   .object({
     priority: z.enum(PRIORITIES, { message: 'Priority must be High, Medium or Low' }).nullable().optional(),
-    assignedTo: z.number().int().positive().optional(),
+    assignedTo: z.number().int().positive().nullable().optional(), // null = unassign
   })
   .refine((v) => v.priority !== undefined || v.assignedTo !== undefined, 'Nothing to update')
 

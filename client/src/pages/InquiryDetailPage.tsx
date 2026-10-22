@@ -70,7 +70,28 @@ export function InquiryDetailPage() {
     }
   }
 
-  async function update(input: { priority?: Priority | null; assignedTo?: number }, label: string) {
+  async function claim() {
+    if (!inquiry) return
+    setSaving(true)
+    setNotice(null)
+    try {
+      const data = await api.claimInquiry(inquiry.id)
+      setInquiry(data.inquiry)
+      setNotice({ kind: 'success', text: 'You are now handling this inquiry' })
+    } catch (err) {
+      if (err instanceof ApiError && err.details?.reason === 'CLAIMED') {
+        // Someone else got there first: show who and reload
+        setNotice({ kind: 'warn', text: `${err.message}. The page has been refreshed.` })
+        await load()
+      } else {
+        setNotice({ kind: 'error', text: err instanceof ApiError ? err.message : 'Could not claim this inquiry' })
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function update(input: { priority?: Priority | null; assignedTo?: number | null }, label: string) {
     if (!inquiry) return
     setSaving(true)
     setNotice(null)
@@ -121,6 +142,9 @@ export function InquiryDetailPage() {
   const currentIndex = STATUSES.indexOf(inquiry.status)
   const canReassign = user?.role === 'manager'
   const inProgress = inquiry.status === 'In Progress'
+  const unassigned = inquiry.assignedTo === null
+  // Same rule as the server: only the assignee or a manager can change it
+  const canModify = user?.role === 'manager' || inquiry.assignedTo?.id === user?.id
 
   return (
     <>
@@ -194,21 +218,29 @@ export function InquiryDetailPage() {
                     )
                   })}
                 </div>
-                {allowedTransitions(inquiry.status).map((next) => (
-                  <button
-                    key={next}
-                    className={`btn ${next === 'Resolved' ? 'btn-primary' : ''}`}
-                    disabled={saving}
-                    onClick={() => changeStatus(next)}
-                  >
-                    {statusIcon[next]} {inquiry.status === 'Resolved' ? 'Reopen' : actionLabel[next]}
-                  </button>
-                ))}
-                <span className="muted" style={{ fontSize: 13 }}>
-                  {inquiry.status === 'Resolved'
-                    ? 'Reopen if the customer needs more work on this.'
-                    : 'A resolved inquiry can be reopened later if more work is needed.'}
-                </span>
+                {canModify ? (
+                  <>
+                    {allowedTransitions(inquiry.status).map((next) => (
+                      <button
+                        key={next}
+                        className={`btn ${next === 'Resolved' ? 'btn-primary' : ''}`}
+                        disabled={saving}
+                        onClick={() => changeStatus(next)}
+                      >
+                        {statusIcon[next]} {inquiry.status === 'Resolved' ? 'Reopen' : actionLabel[next]}
+                      </button>
+                    ))}
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      {inquiry.status === 'Resolved'
+                        ? 'Reopen if the customer needs more work on this.'
+                        : 'A resolved inquiry can be reopened later if more work is needed.'}
+                    </span>
+                  </>
+                ) : (
+                  <span className="muted" style={{ fontSize: 13 }}>
+                    Claim this inquiry to change its status.
+                  </span>
+                )}
               </div>
             </div>
 
@@ -219,7 +251,7 @@ export function InquiryDetailPage() {
                   Priority
                   <select
                     value={inquiry.priority ?? ''}
-                    disabled={saving}
+                    disabled={saving || !canModify}
                     onChange={(e) => update({ priority: (e.target.value || null) as Priority | null }, 'Priority')}
                   >
                     <option value="">Not set</option>
@@ -232,20 +264,29 @@ export function InquiryDetailPage() {
                   Assigned to
                   {canReassign ? (
                     <select
-                      value={inquiry.assignedTo.id}
+                      value={inquiry.assignedTo?.id ?? ''}
                       disabled={saving || staff.length === 0 || inProgress}
-                      onChange={(e) => update({ assignedTo: Number(e.target.value) }, 'Assignee')}
+                      onChange={(e) => update({ assignedTo: e.target.value ? Number(e.target.value) : null }, 'Assignee')}
                     >
-                      {staff.length === 0 && <option value={inquiry.assignedTo.id}>{inquiry.assignedTo.name}</option>}
+                      <option value="">Unassigned</option>
+                      {staff.length === 0 && inquiry.assignedTo && <option value={inquiry.assignedTo.id}>{inquiry.assignedTo.name}</option>}
                       {staff.map((s) => (
                         <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                       ))}
                     </select>
                   ) : (
-                    <input value={inquiry.assignedTo.name} readOnly />
+                    <input value={inquiry.assignedTo?.name ?? 'Unassigned'} readOnly />
                   )}
                 </label>
-                {!canReassign && <span className="muted" style={{ fontSize: 13 }}>Only managers can reassign.</span>}
+                {unassigned && (
+                  <button className="btn btn-primary" disabled={saving} onClick={claim}>
+                    Claim this inquiry
+                  </button>
+                )}
+                {unassigned && (
+                  <span className="muted" style={{ fontSize: 13 }}>Nobody is handling this yet. The first person to claim it gets it.</span>
+                )}
+                {!canReassign && !unassigned && <span className="muted" style={{ fontSize: 13 }}>Only managers can reassign.</span>}
                 {canReassign && inProgress && (
                   <span className="problem-text" style={{ fontSize: 13 }}>
                     Already in progress. It cannot be reassigned until it is resolved.
